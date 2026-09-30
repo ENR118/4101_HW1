@@ -9,22 +9,27 @@ from itertools import combinations
 #=================== Task 1: Compute Node Centralities ===================
 
 #---------- Task 2.1: eigenvector centrality
+# use numpy instead of scipy
+# DONE
 def get_eigen_centrality(graph):
     # adj matrix of graph
-    A = []
+    A = graph.get_adj_matrix()
     # change element in A into float type 
-    #A_float = A.astype(float)
+    A_float = A.astype(float)
     
     # use linalg.eigs() to get eigenvalue and vectors
-    #eigenvalue, eigenvector = linalg.eigs(, k = , which = 'LR')
+    eigenvalue, eigenvector = np.linalg.eigs(A_float, k = 1, which = 'LR')
 
-    #largest = eigenvector.flatten().real
+    largest = eigenvector.flatten().real
     
     # compute the norm
-    #norm = sp.sign(largest.sum())*sp.linalg.norm(largest)
+    norm = np.sign(largest.sum()) * np.linalg.norm(largest)
+
+    if norm == 0:
+        return largest
 
     # return the normalized eigen vector
-    return []
+    return largest / norm
 
 #------------ Task 2.2:  compute betweenness centrality
 # compute the levels for a given source node s
@@ -49,21 +54,21 @@ def levels_BFS(graph,s):
     while len(current_level)>0:
         for node in current_level:
             for nbr in adj_list[node]:
-                # comment out next line once loop is implemented
-                print(nbr)
+                if not visited[nbr]:
+                    visited[nbr] = True
+                    next_level.append(nbr)
         
         # update depth
-        depth = 0
+        depth += 1
         # update distance for all the node in the next_level
         for i in next_level:
-            # comment out next line once loop is implemented
-            print(i)
+            distance[i] = depth
         
         # add the current level of nodes into levels
         levels.append(current_level)
 
         # update current_level and next_level
-        current_level = []
+        current_level = next_level
         
         next_level = []
 
