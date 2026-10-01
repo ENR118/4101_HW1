@@ -18,7 +18,7 @@ def get_eigen_centrality(graph):
     A_float = A.astype(float)
     
     # use linalg.eigs() to get eigenvalue and vectors
-    eigenvalue, eigenvector = np.linalg.eigs(A_float, k = 1, which = 'LR')
+    eigenvalue, eigenvector = sp.sparse.linalg.eigs(A_float, k = 1, which = 'LR')
 
     largest = eigenvector.flatten().real
     
@@ -51,7 +51,7 @@ def levels_BFS(graph,s):
     distance = np.zeros(graph.n, dtype = int)
     distance[s] = 0
 
-    while len(current_level)>0:
+    while len(current_level) > 0:
         for node in current_level:
             for nbr in adj_list[node]:
                 if not visited[nbr]:
@@ -96,8 +96,7 @@ def find_pred(graph,levels,s):
             
             # predecessors are the intersection of neighbors and prev_level
             nbrs = adj_list[node]
-            pred_dict[node] = list()
-
+            pred_dict[node] = list(set(nbrs) & prev_level)
     return pred_dict
 
 # find number of shortest paths from source node s to all other nodes
@@ -106,17 +105,18 @@ def find_num_shortest_path(graph,levels,pred_dict,s):
     num_shortest_path = np.zeros(graph.n,dtype = int)
     num_shortest_path[s] = 1 # by default
 
-
     depth = len(levels)
+
     # iterate from the second level to the last level
     for level_num in range(1,depth):
-        current_level = []
+        current_level = levels[level_num]
         # calculate number of shortest paths from s to every node in the current level 
+        
         for node in current_level:
             # get the predecessors of node
-            pred = []      
+            pred = pred_dict[node]      
             for p_node in pred:
-                num_shortest_path[node] = 0
+                num_shortest_path[node] += num_shortest_path[p_node]
 
     return num_shortest_path
 
@@ -128,16 +128,16 @@ def build_matrix(graph,distance_mat,num_shortest_path_mat):
         distance, levels = levels_BFS(graph,s)
         
         # fill in the s-th row of distance_mat matrix
-        #distance_mat[s,:] = 
+        distance_mat[s,:] = distance
         
         # find the predecessors for all nodes
-        #pred_dict = 
+        pred_dict = find_pred(graph, levels, s) 
 
         # compute the number of shortest paths from s to all other nodes
-        #num_shortest_path = 
+        num_shortest_path = find_num_shortest_path(graph, levels, pred_dict, s)
         
         # fill in the s-th row of num_shortest_path_mat matrix
-        #num_shortest_path_math[s,:] = 
+        num_shortest_path_mat[s,:] = num_shortest_path
 
 #compute betweenness centrality for a node w, using the two matrices
 def get_btw_c(graph,w,distance_mat,num_shortest_path_mat):
@@ -147,7 +147,8 @@ def get_btw_c(graph,w,distance_mat,num_shortest_path_mat):
     
     #initialize centrality as 0
     btw_c = 0.0
-    
+
+    n = graph.n
 
     # enumerate each pair of nodes
     comb = combinations(rest_nodes,2) 
@@ -156,20 +157,22 @@ def get_btw_c(graph,w,distance_mat,num_shortest_path_mat):
         v = node_pair[1]
 
         # get the distances for the three pairs of nodes (u,v), (w,v), (w,u)
-        d_uv = 0
-        d_wv = 0
-        d_wu = 0
-        if     True           : # check if w is on the shortest path of u and v
+        # (just access distance_mat)
+        d_uv = distance_mat[u, v]
+        d_wv = distance_mat[w, v]
+        d_wu = distance_mat[w, u]
+        if d_uv > 0 and d_wv + d_wu == d_uv: # check if w is on the shortest path of u and v
             #compute number of shortest path (nsp) for three pairs of nodes (u,v), (w,v), (w,u)
-            nsp_uv = 0
-            nsp_wu = 0
-            nsp_wv = 0
+            nsp_uv = num_shortest_path_mat[u, v]
+            nsp_wu = num_shortest_path_mat[w, u]
+            nsp_wv = num_shortest_path_mat[w, v]
             # update btw_c
-            btw_c = 0
+            if nsp_uv > 0:
+                btw_c += (nsp_wv * nsp_wu) / nsp_uv
     
     # return btw_c; 
     # *** remember to normalize ***
-    return 0
+    return btw_c / ((n - 1) * (n - 2) / 2)
 
 
 
