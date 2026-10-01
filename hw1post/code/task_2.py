@@ -77,7 +77,7 @@ def levels_BFS(graph,s):
 # compute predecessors for all nodes other than s
 def find_pred(graph,levels,s):
 
-    adj_list = []
+    adj_list = graph.get_adj_list()
 
     # initialize a dictionary
     # key is the node id, value is a list of neighbors
@@ -87,15 +87,15 @@ def find_pred(graph,levels,s):
     # iterate from the second level to the last level
     for level_num in range(1,depth):
         # nodes in the current level
-        current_level = []
+        current_level = levels[level_num]
         # nodes in the previous level
-        prev_level = []
+        prev_level = set(levels[level_num - 1])
 
         # find the predecessors for each node in current level
         for node in current_level:
             
             # predecessors are the intersection of neighbors and prev_level
-            nbrs = []
+            nbrs = adj_list[node]
             pred_dict[node] = list()
 
     return pred_dict
