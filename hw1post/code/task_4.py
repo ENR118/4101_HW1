@@ -11,12 +11,14 @@ import random
 #=================== Task 4: Generate Random Graphs ===================
 
 # parameters - do not change the seed
+# ACTUALLY DO NOT CHANGE ANY OF THE PARAMETERS
 seed = 14
 n = 200
 p = 0.2
 m = 5
 
 # generate ER graph
+# DONE
 def gen_ER(n,p,seed):
     # n: number of nodes
     # p: probability
@@ -25,14 +27,14 @@ def gen_ER(n,p,seed):
     np.random.seed(seed)
 
     # number of all possible edges
-    edge_num = int()
+    edge_num = n * (n - 1) // 2
     
     # generate a random vector
     # one random number for each possible edge
-    edge_roll = np.random.uniform(0.0,1.0,edge_num)
+    edge_roll = np.random.uniform(0.0, 1.0, edge_num)
 
     # initialize the adj matrix
-    A = np.zeros((n,n),dtype = int)
+    A = np.zeros((n,n), dtype = int)
 
     # pointer to the current edge
     current = 0
@@ -40,9 +42,10 @@ def gen_ER(n,p,seed):
         for j in range(i+1,n):
             # compare the random number edge_roll[current] with p
             # to decide if we add this edge
-            if   True   :
+            if edge_roll[current] < p:
                 # remember to update two entries in A
-                A[0][0] = 0
+                A[i, j] = 1
+                A[j, i] = 1
 
             # move to the next edge
             current += 1
@@ -52,10 +55,8 @@ def gen_ER(n,p,seed):
 # an auxiliary function to generate BA graph
 # select m unique nodes from input nodes
 def pick_nodes(nodes,m):
-
     #initialize the target nodes as an empty set
     target_nodes = set()
-    
 
     while len(target_nodes) < m: # keep adding nodes until m nodes are added
         # randomly select a node
@@ -64,7 +65,7 @@ def pick_nodes(nodes,m):
         # use add() function to add node into target_nodes
         # note: set object stores unique elements; 
         # for example, if target_nodes = {1,2,3}, when add a node 1 into target_nodes, it will not change
-
+        target_nodes.add(node)
         
     return target_nodes
 
@@ -97,19 +98,20 @@ def gen_BA(n,m,seed):
         # add edges between new_node the each node in target_nodes
         edges = zip([new_node]* m, target_nodes)
         for edge in edges:
-            A[0,0] = 0
+            u, v = edge
+            A[u, v] = 1
+            A[v, u] = 1
 
         #--- now,  generate the new target_nodes, according to the node degrees
 
         # add nodes in target_nodes into repeated nodes
-        #repeated_nodes.extend()
+        repeated_nodes.extend(target_nodes)
 
         # add new_nodes m times into repeated nodes
-        #repeated_nodes.extend()
+        repeated_nodes.extend([new_node] * m)
 
         #--- pick m nodes from repeated_nodes, which are the new target_nodes
-
-        target_nodes = []
+        target_nodes = list(pick_nodes(repeated_nodes, m))
 
         #--- update new_node
         new_node += 1

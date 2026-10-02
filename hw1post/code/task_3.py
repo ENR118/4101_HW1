@@ -11,7 +11,7 @@ from numpy import linalg as LA
 from numpy.linalg import inv
 
 #=================== Task 3: link prediction ===================
-
+# DONE
 # generate an observed network
 def gen_net_obs(graph, test_edges, test_non_edges):
     adj_matrix = graph.get_adj_matrix()
