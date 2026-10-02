@@ -13,60 +13,82 @@ from numpy.linalg import inv
 #=================== Task 3: link prediction ===================
 
 # generate an observed network
-def gen_net_obs(graph, test_edges,test_non_edges):
-    adj_matrix = []
+def gen_net_obs(graph, test_edges, test_non_edges):
+    adj_matrix = graph.get_adj_matrix()
     # adjacency matrix of the observed graph, which is a copy of the adj_matrix of the original graph
     adj_obs = adj_matrix.copy()
     # number of edges in target set
-    pos_num = 0
+    pos_num = len(test_edges)
     # number of non_edges in target set
-    neg_num = 0
+    neg_num = len(test_non_edges)
     
     # test_set is the union of test edges and non-edges
-    test_set = np.concatenate((test_edges,test_non_edges),axis = 0)
+    test_set = np.concatenate((test_edges, test_non_edges), axis = 0)
 
     #--remove edges by chaning adj_obs
+    # can do so by zeroing out the indices for that node pair in the adj. matrix
     for edge in test_edges:
-        edge=0
+        u, v = edge[0], edge[1]
+        adj_obs[u, v] = 0
+        adj_obs[v, u] = 0
 
     return adj_obs, test_set
 
 # compute Jaccard similarity for all node pairs
-def compute_Jaccard(adj,node_pairs): # cn/d_u + d_v - cn
+def compute_Jaccard(adj, node_pairs): # cn/d_u + d_v - cn
     # adj is the adjacency matrix of the observed network
     pair_num = node_pairs.shape[0]
     # store the similarity scores for all the node pairs
-    sim_vec = np.zeros(pair_num,dtype = float)
+    sim_vec = np.zeros(pair_num, dtype = float)
+
+    # since Jaccard needs node degrees, calculate prior
+    degrees = np.sum(adj, axis=1)
 
     for i in range(pair_num):
         u = node_pairs[i,0]
         v = node_pairs[i,1]
         
         # number of common neighbors
-        cn_num = 0
+        # dot product of rows for u and v
+        cn_num = np.dot(adj[u], adj[v])
+
         # degree of u and v
-        deg_u = 0
-        deg_v = 0
+        deg_u = degrees[u]
+        deg_v = degrees[v]
+
         # similarity between u and v
-        sim_vec[i] = 0
+        # number of uncommon neighbors
+        unc_num = deg_u + deg_v - cn_num
+        if unc_num <= 0:
+            sim_vec[i] = 0.0
+            continue
+
+        # Jaccard == |N(u, v)| / (d(u) + d(v) - |N(u, v)|)
+        sim_vec[i] = cn_num / unc_num
         
     return sim_vec
 
 
 # compute Katz similarity for all node pairs
-def compute_Katz(adj,node_pairs):
+def compute_Katz(adj, node_pairs):
     # adj is the adjacency matrix of the observed network
     pair_num = node_pairs.shape[0]
     sim_vec = np.zeros(pair_num,dtype = float)
 
-
     #compute similarity matrix
     beta = 0.09
-    Katz_matrix = []
+
+    # identity matrix
+    I = np.eye(adj.shape[0])
+
+    # Katz == ((I - beta * A)^-1) - I
+    Katz_matrix = np.linalg.inv(I - beta * adj) - I
     
     # get the Katz similarity for each pair of node
     for i in range(pair_num):
-        sim_vec[i] = 0
+        u, v = node_pairs[i]
+        sim_vec[i] = Katz_matrix[u, v]
+
     return sim_vec
 
 # link prediction, by comparing similarity with a threshold theta
@@ -81,15 +103,18 @@ def link_pred(adj,node_pairs, metric,theta):
         sim_vec = compute_Jaccard(adj,node_pairs)
     elif metric == 'Katz':
         sim_vec = compute_Katz(adj,node_pairs)
-        #print(sim_vec)
+    else:
+        print("invalid")
 
     # make prediction
-
     pred = np.zeros(len(node_pairs),dtype = int)
 
     # if sim_vec[i] >= theta, predict node pair i as a link (set pred[i] as 1)
     # otherwise set pred[i] as 0
 
-    pred = []
+    # verify every node pair's similarity >= theta or not
+    for i in range(len(sim_vec)):
+        if sim_vec[i] >= theta:
+            pred[i] = 1
 
     return pred
