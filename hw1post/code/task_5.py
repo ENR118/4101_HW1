@@ -132,6 +132,7 @@ def modify_graph(graph, target_nodes):
     # construct the adj matrix of a new graph
     A_new = A.copy()
 
+    # band-aid fix: don't even know if this did anything
     if sparse.issparse(A_new):
         A_new = A_new.tolil()
 
